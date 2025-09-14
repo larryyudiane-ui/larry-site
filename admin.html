@@ -31,6 +31,10 @@
             background: white;
             box-shadow: 2px 0 4px rgba(0,0,0,0.1);
             padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
         }
 
         .sidebar-header {
@@ -45,7 +49,7 @@
             font-size: 20px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
 
         .sidebar-title i {
@@ -55,6 +59,7 @@
 
         .sidebar-nav {
             padding: 0 10px;
+            flex-grow: 1;
         }
 
         .nav-item {
@@ -367,23 +372,41 @@
             color: #33691e;
         }
 
+        /* Page Footer */
+        .page-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #eee;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
             }
-            
+
             .sidebar {
                 width: 100%;
                 order: 2;
             }
-            
+
             .main-content {
                 order: 1;
             }
-            
+
             .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .page-footer {
+                position: static;
+                margin-top: 20px;
             }
         }
     </style>
@@ -403,10 +426,8 @@
                     <i class="fas fa-chart-line"></i>
                     Dashboard
                 </a>
+                <button id="logoutBtn" class="logout-btn" style="margin-top: 10px;">Logout</button>
             </nav>
-            <div style="padding: 10px 20px; border-top: 1px solid #eee; margin-top: auto;">
-                <button id="logoutBtn" class="logout-btn">Logout</button>
-            </div>
         </div>
 
         <!-- Main Content -->
@@ -467,7 +488,7 @@
                 <div class="user-section">
                     <h2 class="section-title">Add New User</h2>
                     <div id="userAlert"></div>
-                    
+
                     <form id="addUserForm" class="add-user-form">
                         <div class="form-group">
                             <label>User Name</label>
