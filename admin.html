@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality - Admin Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: white;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+            padding: 20px 0;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-title i {
+            margin-right: 10px;
+            color: #4285f4;
+        }
+
+        .sidebar-nav {
+            padding: 0 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: #666;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #f0f4ff;
+            color: #4285f4;
+        }
+
+        .nav-item.active {
+            background: #e8f0fe;
+            color: #4285f4;
+            font-weight: 500;
+        }
+
+        .nav-item i {
+            margin-right: 12px;
+            width: 16px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 400;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            min-height: calc(100vh - 200px);
+        }
+
+        .area-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .area-header {
+            padding: 20px 20px 0;
+        }
+
+        .area-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .area-subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            height: 200px;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            padding: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+            transition: box-shadow 0.2s;
+        }
+
+        .chart-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #4285f4;
+            margin-bottom: 4px;
+        }
+
+        .chart-subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px 20px;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 2px;
+            border-radius: 1px;
+        }
+
+        .view-details {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            color: #666;
+            text-decoration: none;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .view-details:hover {
+            background: #f8f9fa;
+        }
+
+        .view-details i {
+            margin-right: 8px;
+        }
+
+        /* User Management */
+        .user-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .add-user-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .btn-primary {
+            background: #4285f4;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #3367d6;
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .user-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .user-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .user-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .status-active {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+    .logout-btn {
+        width: 100%;
+        background: #4285f4;
+        color: white;
+        padding: 10px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+        background: #3367d6;
+    }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #f1f8e9;
+            border-color: #8bc34a;
+            color: #33691e;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .main-content {
+                order: 1;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <i class="fas fa-tint"></i>
+                    Water Quality
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" onclick="showSection('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </a>
+            </nav>
+            <div style="padding: 10px 20px; border-top: 1px solid #eee; margin-top: auto;">
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section">
+                <div class="header">
+                    <h1>Admin Dashboard</h1>
+                    <p>Real-time water quality monitoring across all areas</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Area 1 -->
+                    <div class="area-section">
+                        <h2 class="area-title">Area 1</h2>
+                        <div class="chart-card">
+                            <div class="chart-title">Parameter Monitoring</div>
+                            <div class="chart-subtitle">pH, COD, TSS, NH3-N, Flow</div>
+                            <div class="chart-container"><canvas id="area1-chart"></canvas></div>
+                        </div>
+                    </div>
+                    <!-- Area 2 -->
+                    <div class="area-section">
+                        <h2 class="area-title">Area 2</h2>
+                        <div class="chart-card">
+                            <div class="chart-title">Parameter Monitoring</div>
+                            <div class="chart-subtitle">pH, COD, TSS, NH3-N, Flow</div>
+                            <div class="chart-container"><canvas id="area2-chart"></canvas></div>
+                        </div>
+                    </div>
+                    <!-- Area 3 -->
+                    <div class="area-section">
+                        <h2 class="area-title">Area 3</h2>
+                        <div class="chart-card">
+                            <div class="chart-title">Parameter Monitoring</div>
+                            <div class="chart-subtitle">pH, COD, TSS, NH3-N, Flow</div>
+                            <div class="chart-container"><canvas id="area3-chart"></canvas></div>
+                        </div>
+                    </div>
+                    <!-- Area 4 -->
+                    <div class="area-section">
+                        <h2 class="area-title">Area 4</h2>
+                        <div class="chart-card">
+                            <div class="chart-title">Parameter Monitoring</div>
+                            <div class="chart-subtitle">pH, COD, TSS, NH3-N, Flow</div>
+                            <div class="chart-container"><canvas id="area4-chart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- User Management Section -->
+            <div id="users-section" style="display: none;">
+                <div class="header">
+                    <h1>User Management</h1>
+                    <p>Manage users and their monitoring areas</p>
+                </div>
+
+                <div class="user-section">
+                    <h2 class="section-title">Add New User</h2>
+                    <div id="userAlert"></div>
+                    
+                    <form id="addUserForm" class="add-user-form">
+                        <div class="form-group">
+                            <label>User Name</label>
+                            <input type="text" id="userName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="userEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Monitoring Area</label>
+                            <select id="userArea" required>
+                                <option value="">Select Area</option>
+                                <option value="area1">Area 1</option>
+                                <option value="area2">Area 2</option>
+                                <option value="area3">Area 3</option>
+                                <option value="area4">Area 4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="userStatus">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn-primary">Add User</button>
+                        </div>
+                    </form>
+
+                    <h3 class="section-title">Active Users</h3>
+                    <div class="users-grid" id="usersGrid">
+                        <!-- Users will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let users = [];
+        let charts = {};
+        let areaData = {};
+
+        // Initialize the application
+        function init() {
+            console.log('Initializing admin dashboard...');
+            generateAreaData();
+            console.log('Area data generated:', areaData);
+            createAreaCharts();
+            console.log('Charts created:', charts);
+            setupEventListeners();
+            // Start real-time updates
+            setInterval(updateChartsData, 10000);
+        }
+
+        // Generate sample data for all areas
+        function generateAreaData() {
+            const timeLabels = [];
+            const now = Date.now();
+            for (let i = 21; i <= 23; i++) {
+                for (let j = 0; j < 60; j += 5) {
+                    const time = new Date(now - ((23 - i) * 60 + (60 - j)) * 60000);
+                    timeLabels.push(time);
+                }
+            }
+
+            ['area1', 'area2', 'area3', 'area4'].forEach(area => {
+                areaData[area] = {
+                    labels: timeLabels,
+                    ph: timeLabels.map(() => 6.5 + Math.random() * 2),
+                    cod: timeLabels.map(() => 15 + Math.random() * 30),
+                    tss: timeLabels.map(() => 8 + Math.random() * 25),
+                    nh3n: timeLabels.map(() => 1 + Math.random() * 4),
+                    flow: timeLabels.map(() => 40 + Math.random() * 80)
+                };
+            });
+        }
+
+        // Create line chart function
+        function createLineChart(ctx, label, unit, initialData) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: initialData.length}, (_, i) => i + 1),
+                    datasets: [{
+                        label: label,
+                        data: initialData,
+                        fill: true,
+                        backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                        borderColor: 'rgba(66, 133, 244, 1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + (unit ? ' ' + unit : '');
+                                }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            display: true,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value, index) {
+                                    return index + 1;
+                                }
+                            },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: { legend: { display: true } },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+        }
+
+        // Create combined chart for each area
+        function createCombinedAreaChart(ctx, area) {
+            const data = areaData[area];
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'pH',
+                            data: data.ph,
+                            borderColor: '#4285f4',
+                            backgroundColor: 'rgba(66,133,244,0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'COD (mg/L)',
+                            data: data.cod,
+                            borderColor: '#ea4335',
+                            backgroundColor: 'rgba(234,67,53,0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'TSS (mg/L)',
+                            data: data.tss,
+                            borderColor: '#fbbc05',
+                            backgroundColor: 'rgba(251,188,5,0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'NH3-N (mg/L)',
+                            data: data.nh3n,
+                            borderColor: '#34a853',
+                            backgroundColor: 'rgba(52,168,83,0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Flow (m³/h)',
+                            data: data.flow,
+                            borderColor: '#9c27b0',
+                            backgroundColor: 'rgba(156,39,176,0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            type: 'time',
+                            time: {
+                                tooltipFormat: 'HH:mm:ss',
+                                unit: 'minute',
+                                displayFormats: {
+                                    minute: 'HH:mm'
+                                }
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: { legend: { display: true, position: 'bottom' } },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+        }
+
+        // Create charts for all areas
+        function createAreaCharts() {
+            charts['area1'] = createCombinedAreaChart(document.getElementById('area1-chart'), 'area1');
+            charts['area2'] = createCombinedAreaChart(document.getElementById('area2-chart'), 'area2');
+            charts['area3'] = createCombinedAreaChart(document.getElementById('area3-chart'), 'area3');
+            charts['area4'] = createCombinedAreaChart(document.getElementById('area4-chart'), 'area4');
+        }
+
+        // Update charts data in real-time
+        function updateChartsData() {
+            const now = new Date();
+
+            ['area1', 'area2', 'area3', 'area4'].forEach(area => {
+                if (areaData[area] && charts[area]) {
+                    // Add new data points
+                    areaData[area].ph.push(6.5 + Math.random() * 2);
+                    areaData[area].cod.push(15 + Math.random() * 30);
+                    areaData[area].tss.push(8 + Math.random() * 25);
+                    areaData[area].nh3n.push(1 + Math.random() * 4);
+                    areaData[area].flow.push(40 + Math.random() * 80);
+
+                    // Add new time label
+                    areaData[area].labels.push(now);
+
+                    // Keep only last 20 data points
+                    if (areaData[area].ph.length > 20) {
+                        areaData[area].ph.shift();
+                        areaData[area].cod.shift();
+                        areaData[area].tss.shift();
+                        areaData[area].nh3n.shift();
+                        areaData[area].flow.shift();
+                        areaData[area].labels.shift();
+                    }
+
+                    // Convert labels to timestamps for Chart.js time scale
+                    const labelsTimestamps = areaData[area].labels.map(date => date.getTime());
+
+                    // Update chart
+                    charts[area].data.labels = areaData[area].labels;
+                    charts[area].data.datasets[0].data = areaData[area].ph;
+                    charts[area].data.datasets[1].data = areaData[area].cod;
+                    charts[area].data.datasets[2].data = areaData[area].tss;
+                    charts[area].data.datasets[3].data = areaData[area].nh3n;
+                    charts[area].data.datasets[4].data = areaData[area].flow;
+                    charts[area].update('none');
+                }
+            });
+        }
+
+
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('addUserForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addUser();
+            });
+        }
+
+        // Show different sections
+        function showSection(section) {
+            // Hide all sections
+            document.getElementById('dashboard-section').style.display = 'none';
+            document.getElementById('users-section').style.display = 'none';
+            
+            // Show selected section
+            document.getElementById(section + '-section').style.display = 'block';
+            
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Add new user
+        function addUser() {
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            const area = document.getElementById('userArea').value;
+            const status = document.getElementById('userStatus').value;
+
+            const newUser = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                area: area,
+                status: status,
+                joinDate: new Date().toLocaleDateString('en-US'),
+                lastActive: new Date().toLocaleString('en-US')
+            };
+
+            users.push(newUser);
+            renderUsers();
+            
+            // Reset form
+            document.getElementById('addUserForm').reset();
+            
+            // Show success message
+            showAlert('User successfully added!', 'success');
+            
+            // Simulate data impact on selected area
+            simulateUserDataImpact(area);
+        }
+
+        // Simulate user data impact
+        function simulateUserDataImpact(area) {
+            if (areaData[area] && charts[area]) {
+                // Add some variation to simulate new user readings
+                const lastIndex = areaData[area].ph.length - 1;
+                areaData[area].ph[lastIndex] += (Math.random() - 0.5) * 0.3;
+                areaData[area].cod[lastIndex] += (Math.random() - 0.5) * 5;
+                areaData[area].tss[lastIndex] += (Math.random() - 0.5) * 3;
+                areaData[area].nh3n[lastIndex] += (Math.random() - 0.5) * 0.5;
+                areaData[area].flow[lastIndex] += (Math.random() - 0.5) * 10;
+
+                // Update combined chart for this area
+                charts[area].data.datasets[0].data = areaData[area].ph;
+                charts[area].data.datasets[1].data = areaData[area].cod;
+                charts[area].data.datasets[2].data = areaData[area].tss;
+                charts[area].data.datasets[3].data = areaData[area].nh3n;
+                charts[area].data.datasets[4].data = areaData[area].flow;
+                charts[area].update('active');
+            }
+        }
+
+        // Render users
+        function renderUsers() {
+            const usersGrid = document.getElementById('usersGrid');
+            usersGrid.innerHTML = '';
+
+            users.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <div class="user-name">${user.name}</div>
+                    <div class="user-info">📧 ${user.email}</div>
+                    <div class="user-info">📍 ${user.area.toUpperCase()}</div>
+                    <div class="user-info">📅 Joined: ${user.joinDate}</div>
+                    <div class="user-info">🕒 Last active: ${user.lastActive}</div>
+                    <span class="user-status status-${user.status}">
+                        ${user.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                    <button class="btn-danger" onclick="removeUser(${user.id})">Remove</button>
+                `;
+                usersGrid.appendChild(userCard);
+            });
+        }
+
+        // Remove user
+        function removeUser(userId) {
+            if (confirm('Are you sure you want to remove this user?')) {
+                users = users.filter(user => user.id !== userId);
+                renderUsers();
+                showAlert('User removed successfully!', 'success');
+            }
+        }
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('userAlert');
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                alertDiv.innerHTML = '';
+            }, 3000);
+        }
+
+        // Initialize the app
+        window.addEventListener('load', init);
+
+        // Logout button functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('loggedIn');
+            localStorage.removeItem('role');
+            localStorage.removeItem('userId');
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>

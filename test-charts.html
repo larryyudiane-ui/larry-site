@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Test - Water Quality</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="users.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { color: green; }
+        .error { color: red; }
+        .chart-container { height: 300px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Chart Functionality Test</h1>
+
+    <div class="test-section">
+        <h2>Test Results:</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>User Data Test:</h2>
+        <div id="user-data-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Chart Test:</h2>
+        <div class="chart-container">
+            <canvas id="test-chart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Test functions
+        function runTests() {
+            const results = document.getElementById('test-results');
+            const userDataTest = document.getElementById('user-data-test');
+
+            // Clear localStorage first
+            localStorage.clear();
+
+            // Test 1: User data initialization
+            try {
+                const users = getUsers();
+                console.log('Users loaded:', users);
+
+                if (users && users.length > 0) {
+                    userDataTest.innerHTML = '<span class="success">✓ User data initialized successfully</span>';
+                    userDataTest.innerHTML += '<br>Users found: ' + users.map(u => u.name).join(', ');
+                } else {
+                    userDataTest.innerHTML = '<span class="error">✗ No user data found</span>';
+                }
+            } catch (error) {
+                userDataTest.innerHTML = '<span class="error">✗ Error initializing user data: ' + error.message + '</span>';
+            }
+
+            // Test 2: Get user data for user1
+            try {
+                const userData = getUserData('user1');
+                console.log('User data for user1:', userData);
+
+                if (userData && userData.ph && userData.ph.history) {
+                    userDataTest.innerHTML += '<br><span class="success">✓ User1 data retrieved successfully</span>';
+                    userDataTest.innerHTML += '<br>pH history points: ' + userData.ph.history.length;
+                } else {
+                    userDataTest.innerHTML += '<br><span class="error">✗ User1 data not found or malformed</span>';
+                }
+            } catch (error) {
+                userDataTest.innerHTML += '<br><span class="error">✗ Error retrieving user data: ' + error.message + '</span>';
+            }
+
+            // Test 3: Create test chart
+            try {
+                const userData = getUserData('user1');
+                if (userData && userData.ph.history.length > 0) {
+                    const ctx = document.getElementById('test-chart').getContext('2d');
+                    const labels = userData.ph.history.map(h => new Date(h.time));
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'pH Level',
+                                data: userData.ph.history.map(h => h.value),
+                                borderColor: '#4285f4',
+                                backgroundColor: 'rgba(66,133,244,0.1)',
+                                borderWidth: 2,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        tooltipFormat: 'HH:mm:ss',
+                                        unit: 'minute',
+                                        displayFormats: { minute: 'HH:mm' }
+                                    }
+                                },
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+
+                    results.innerHTML = '<span class="success">✓ All tests passed! Charts should be working properly.</span>';
+                } else {
+                    results.innerHTML = '<span class="error">✗ Cannot create chart - no data available</span>';
+                }
+            } catch (error) {
+                results.innerHTML = '<span class="error">✗ Chart creation failed: ' + error.message + '</span>';
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

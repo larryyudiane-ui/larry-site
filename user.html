@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Dashboard - Water Quality</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .sidebar {
+      width: 250px;
+      background: white;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .sidebar-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #4285f4;
+      margin: 0;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 12px 15px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 5px;
+      transition: all 0.2s;
+    }
+
+    .nav-link.active {
+      background: #e8f0fe;
+      color: #4285f4;
+    }
+
+    .nav-link:hover {
+      background: #f0f4ff;
+      color: #4285f4;
+    }
+
+    .nav-link.inactive {
+      color: #666;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    .user-info {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      background: #4285f4;
+      color: white;
+      padding: 10px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #3367d6;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px; /* tambah padding biar gak nempel sidebar */
+      background: #f8f9fa;
+      overflow: auto;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 20px;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    .chart-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .chart-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .chart-subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .chart-container {
+      height: 280px;
+      position: relative;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        order: 2;
+      }
+      .main-content {
+        order: 1;
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2 class="sidebar-title">Water Quality</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-link active">Dashboard</a>
+      <a href="#" class="nav-link inactive">Settings</a>
+    </nav>
+    <div class="sidebar-footer">
+      <p class="user-info">User<br/>user@example.com</p>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <h1 class="page-title">User Dashboard</h1>
+    <h2 class="section-title">Your Area Details</h2>
+
+    <!-- Grid Charts -->
+    <div class="charts-grid">
+      <section class="chart-card">
+        <h3 class="chart-title">pH Level</h3>
+        <p class="chart-subtitle">Real-time pH value of the water.</p>
+        <div class="chart-container"><canvas id="phChart"></canvas></div>
+      </section>
+
+      <section class="chart-card">
+        <h3 class="chart-title">COD (Chemical Oxygen Demand)</h3>
+        <p class="chart-subtitle">Real-time COD value of the water.</p>
+        <div class="chart-container"><canvas id="codChart"></canvas></div>
+      </section>
+
+      <section class="chart-card">
+        <h3 class="chart-title">TSS (Total Suspended Solids)</h3>
+        <p class="chart-subtitle">Real-time TSS value of the water.</p>
+        <div class="chart-container"><canvas id="tssChart"></canvas></div>
+      </section>
+
+      <section class="chart-card">
+        <h3 class="chart-title">NH3-N (Ammonia Nitrogen)</h3>
+        <p class="chart-subtitle">Real-time NH3-N value of the water.</p>
+        <div class="chart-container"><canvas id="nh3nChart"></canvas></div>
+      </section>
+
+      <section class="chart-card">
+        <h3 class="chart-title">Flow Meter</h3>
+        <p class="chart-subtitle">Real-time water flow rate.</p>
+        <div class="chart-container"><canvas id="flowmeterChart"></canvas></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="users.js"></script>
+  <script>
+    // Logout button
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'login.html';
+    });
+
+    // Get user
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+      alert('User not logged in. Redirecting to login page.');
+      window.location.href = 'login.html';
+    }
+
+    // Chart helper
+    function createLineChart(ctx, label, unit, initialData, labels) {
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: initialData,
+            fill: true,
+            backgroundColor: 'rgba(66, 133, 244, 0.1)',
+            borderColor: 'rgba(66, 133, 244, 1)',
+            borderWidth: 2,
+            tension: 0.4,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 0 },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value + (unit ? ' ' + unit : '');
+                }
+              },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+              type: 'time',
+              time: {
+                tooltipFormat: 'HH:mm:ss',
+                unit: 'minute',
+                displayFormats: {
+                  minute: 'HH:mm'
+                }
+              },
+              ticks: {
+                autoSkip: true,
+                maxTicksLimit: 10
+              },
+              grid: { display: false }
+            }
+          },
+          plugins: { legend: { display: false } },
+          interaction: { intersect: false, mode: 'index' }
+        }
+      });
+    }
+
+    // Initialize charts variable to hold chart instances
+    let phChart, codChart, tssChart, nh3nChart, flowmeterChart;
+
+    // Function to initialize all charts
+    function initializeCharts(userData) {
+      let labels = userData.ph.history.map(h => new Date(h.time));
+      phChart = createLineChart(document.getElementById('phChart'), 'pH Level', '', userData.ph.history.map(h => h.value), labels);
+      codChart = createLineChart(document.getElementById('codChart'), 'COD', 'mg/L', userData.cod.history.map(h => h.value), labels);
+      tssChart = createLineChart(document.getElementById('tssChart'), 'TSS', 'mg/L', userData.tss.history.map(h => h.value), labels);
+      nh3nChart = createLineChart(document.getElementById('nh3nChart'), 'NH3-N', 'mg/L', userData.nh3n.history.map(h => h.value), labels);
+      flowmeterChart = createLineChart(document.getElementById('flowmeterChart'), 'Flow Meter', 'm³/h', userData.flowmeter.history.map(h => h.value), labels);
+    }
+
+    // Function to update all charts
+    function updateCharts(userData) {
+      let labels = userData.ph.history.map(h => new Date(h.time));
+      phChart.data.labels = labels;
+      phChart.data.datasets[0].data = userData.ph.history.map(h => h.value);
+
+      codChart.data.labels = labels;
+      codChart.data.datasets[0].data = userData.cod.history.map(h => h.value);
+
+      tssChart.data.labels = labels;
+      tssChart.data.datasets[0].data = userData.tss.history.map(h => h.value);
+
+      nh3nChart.data.labels = labels;
+      nh3nChart.data.datasets[0].data = userData.nh3n.history.map(h => h.value);
+
+      flowmeterChart.data.labels = labels;
+      flowmeterChart.data.datasets[0].data = userData.flowmeter.history.map(h => h.value);
+
+      phChart.update();
+      codChart.update();
+      tssChart.update();
+      nh3nChart.update();
+      flowmeterChart.update();
+    }
+
+    // Initialize charts on page load
+    window.addEventListener('load', () => {
+      let userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('User not logged in. Redirecting to login page.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      let userData = getUserData(userId);
+      if (!userData) {
+        const defaultData = generateInitialData();
+        updateUserData(userId, defaultData);
+        userData = getUserData(userId);
+      }
+
+      initializeCharts(userData);
+
+      // Update charts every 30 minutes
+      setInterval(() => {
+        simulateDataUpdate(userId);
+        let updatedData = getUserData(userId);
+        updateCharts(updatedData);
+      }, 1800000);
+    });
+  </script>
+</body>
+</html>
