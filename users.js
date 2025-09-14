@@ -1,21 +1,25 @@
 // ================== User Data Management ==================
 function getUsers() {
-    const users = localStorage.getItem('users');
-    if (users) {
-        const parsedUsers = JSON.parse(users);
-        // Ensure all users have proper data structure and convert time strings back to Date objects
-        return parsedUsers.map(user => ({
-            ...user,
-            data: user.data ? convertDataTimesToDates(user.data) : generateInitialData()
-        }));
+    try {
+        const users = localStorage.getItem('users');
+        if (users) {
+            const parsedUsers = JSON.parse(users);
+            // Ensure all users have proper data structure and convert time strings back to Date objects
+            return parsedUsers.map(user => ({
+                ...user,
+                data: user.data ? convertDataTimesToDates(user.data) : generateInitialData()
+            }));
+        }
+    } catch (e) {
+        console.error("Data users corrupt, reset ulang:", e);
     }
 
-    // Create default users with proper data
+    // fallback ke default
     const defaultUsers = [
         { id: 'user1', name: 'User 1', data: generateInitialData() },
         { id: 'user2', name: 'User 2', data: generateInitialData() }
     ];
-    localStorage.setItem('users', JSON.stringify(defaultUsers));
+    saveUsers(defaultUsers);
     return defaultUsers;
 }
 
@@ -26,7 +30,7 @@ function convertDataTimesToDates(data) {
         if (convertedData[param] && convertedData[param].history) {
             convertedData[param].history = convertedData[param].history.map(h => ({
                 time: new Date(h.time),
-                value: h.value
+                value: Number(h.value)
             }));
         }
     });
@@ -67,11 +71,41 @@ function updateUserData(userId, newData) {
 function generateInitialData() {
     const now = Date.now();
     return {
-        ph: { value: 7.0, history: Array.from({length: 10}, (_, i) => ({ time: new Date(now - (9 - i) * 1800000), value: (Math.random() * 2 + 6).toFixed(1) })) },
-        cod: { value: 50, history: Array.from({length: 10}, (_, i) => ({ time: new Date(now - (9 - i) * 1800000), value: Math.floor(Math.random() * 100 + 20) })) },
-        tss: { value: 30, history: Array.from({length: 10}, (_, i) => ({ time: new Date(now - (9 - i) * 1800000), value: Math.floor(Math.random() * 50 + 10) })) },
-        nh3n: { value: 5, history: Array.from({length: 10}, (_, i) => ({ time: new Date(now - (9 - i) * 1800000), value: (Math.random() * 10 + 1).toFixed(1) })) },
-        flowmeter: { value: 100, history: Array.from({length: 10}, (_, i) => ({ time: new Date(now - (9 - i) * 1800000), value: Math.floor(Math.random() * 50 + 80) })) }
+        ph: { 
+            value: parseFloat((Math.random() * 2 + 6).toFixed(1)), 
+            history: Array.from({length: 10}, (_, i) => ({ 
+                time: new Date(now - (9 - i) * 1800000), 
+                value: parseFloat((Math.random() * 2 + 6).toFixed(1)) 
+            })) 
+        },
+        cod: { 
+            value: Math.floor(Math.random() * 100 + 20), 
+            history: Array.from({length: 10}, (_, i) => ({ 
+                time: new Date(now - (9 - i) * 1800000), 
+                value: Math.floor(Math.random() * 100 + 20) 
+            })) 
+        },
+        tss: { 
+            value: Math.floor(Math.random() * 50 + 10), 
+            history: Array.from({length: 10}, (_, i) => ({ 
+                time: new Date(now - (9 - i) * 1800000), 
+                value: Math.floor(Math.random() * 50 + 10) 
+            })) 
+        },
+        nh3n: { 
+            value: parseFloat((Math.random() * 10 + 1).toFixed(1)), 
+            history: Array.from({length: 10}, (_, i) => ({ 
+                time: new Date(now - (9 - i) * 1800000), 
+                value: parseFloat((Math.random() * 10 + 1).toFixed(1)) 
+            })) 
+        },
+        flowmeter: { 
+            value: Math.floor(Math.random() * 50 + 80), 
+            history: Array.from({length: 10}, (_, i) => ({ 
+                time: new Date(now - (9 - i) * 1800000), 
+                value: Math.floor(Math.random() * 50 + 80) 
+            })) 
+        }
     };
 }
 
@@ -82,10 +116,10 @@ function simulateDataUpdate(userId) {
         const data = users[userIndex].data;
         const now = new Date();
         // Update current values
-        data.ph.value = (Math.random() * 2 + 6).toFixed(1);
+        data.ph.value = parseFloat((Math.random() * 2 + 6).toFixed(1));
         data.cod.value = Math.floor(Math.random() * 100 + 20);
         data.tss.value = Math.floor(Math.random() * 50 + 10);
-        data.nh3n.value = (Math.random() * 10 + 1).toFixed(1);
+        data.nh3n.value = parseFloat((Math.random() * 10 + 1).toFixed(1));
         data.flowmeter.value = Math.floor(Math.random() * 50 + 80);
 
         // Update history
@@ -110,14 +144,6 @@ if (!localStorage.getItem('users')) {
 }
 
 // ================== Chart Handling ==================
-function generateLabels(length = 10) {
-    const now = new Date();
-    return Array.from({ length }, (_, i) => {
-        const d = new Date(now.getTime() - (length - i) * 1800000); // 30 minutes
-        return d;
-    });
-}
-
 const userCharts = {}; // simpan chart per user
 
 function renderUserChart(user) {
@@ -218,11 +244,15 @@ function updateUserChart(userId) {
 }
 
 // ================== Dashboard Init ==================
-function initDashboard() {
-    const users = getUsers();
-    const container = document.getElementById('dashboard');
+let updateInterval;
 
+function initDashboard() {
+    const container = document.getElementById('dashboard');
+    if (!container) return; // kalau halaman bukan dashboard, hentikan
+
+    const users = getUsers();
     container.innerHTML = ''; // reset
+
     users.forEach(user => {
         const card = document.createElement('div');
         card.className = 'user-card';
@@ -234,8 +264,8 @@ function initDashboard() {
         renderUserChart(user);
     });
 
-    // Update setiap 5 detik
-    setInterval(() => {
+    if (updateInterval) clearInterval(updateInterval);
+    updateInterval = setInterval(() => {
         users.forEach(u => updateUserChart(u.id));
     }, 5000);
 }

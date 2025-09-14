@@ -4,16 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login - Water Quality</title>
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body class="h-full flex items-center justify-center">
   <div class="bg-white rounded-lg shadow-lg p-8 w-80 text-center">
+    <!-- Logo -->
     <div class="bg-blue-700 rounded-full w-14 h-14 mx-auto flex items-center justify-center mb-4 text-white text-2xl">
       <i class="fas fa-tint"></i>
     </div>
+
+    <!-- Title -->
     <h1 class="text-xl font-bold mb-1">Water Quality</h1>
     <p class="text-gray-600 mb-6 text-sm">Select a role to access the dashboard.</p>
+
+    <!-- Login Buttons -->
     <div class="space-y-3">
       <button id="login-admin" class="w-full bg-blue-700 hover:bg-blue-800 text-white py-2 rounded flex items-center justify-center gap-2">
         <i class="fas fa-shield-alt"></i> Login as Admin
@@ -24,21 +31,27 @@
     </div>
   </div>
 
+  <!-- Script -->
   <script>
+    // Admin Login
     document.getElementById('login-admin').addEventListener('click', () => {
       localStorage.setItem('loggedIn', 'true');
       localStorage.setItem('role', 'admin');
-      window.location.href = 'admin.html';
+      window.location.href = 'admin.html'; // redirect ke dashboard admin
     });
 
+    // User Login
     document.getElementById('login-user').addEventListener('click', () => {
       localStorage.setItem('loggedIn', 'true');
       localStorage.setItem('role', 'user');
+
+      // pilih user pertama sebagai default (kalau ada)
       const users = JSON.parse(localStorage.getItem('users')) || [];
       if (users.length > 0) {
         localStorage.setItem('userId', users[0].id);
       }
-      window.location.href = 'user.html';
+
+      window.location.href = 'user.html'; // redirect ke dashboard user
     });
   </script>
 </body>
